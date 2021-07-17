@@ -101,7 +101,7 @@ def findcartridge(data,slice_num,volume_num,sig=2,lt=0,ht=100,rad1=8,rad2=52, st
 # Mask calculation for the inner cartridge 
 # =================================================================================================
 
-def inner_mask(data_path,slice_num,volume_num=0,lvl=0.004,rad1=7,rad2=50,step=1):
+def inner_mask(data_path,slice_num,volume_num=0,lvl=0.004,rad1=7,rad2=50,step=1, img_path=None):
     
     im = nib.load(data_path).get_data()[:,:,slice_num,volume_num]
     im_sobel = sobel(im)
@@ -111,13 +111,19 @@ def inner_mask(data_path,slice_num,volume_num=0,lvl=0.004,rad1=7,rad2=50,step=1)
         contours =find_contours(im_sobel,level=lvl,fully_connected='high')
         for n, contour in enumerate(contours):
             plt.plot(contour[:, 1], contour[:, 0], linewidth=2)
-        plt.show()
-        print('If this is not showing four circle boundaries, clearly - you need to change the thresholding level for finding contours again. If not changed, all subsequent estimation might fail.')
-        repeat = int(input('Do you want to repeat and change the thresholding level? 1 for yes, 0 for no'))
-        if repeat:
-            print('Current level is:',lvl)
-            print('\n')
-            lvl = input('Enter the new lvl (integer)')
+        
+        if img_path:
+            plt.savefig(img_path)
+            plt.close()
+            repeat = 0
+        else:
+            plt.show()
+            print('If this is not showing four circle boundaries, clearly - you need to change the thresholding level for finding contours again. If not changed, all subsequent estimation might fail.')
+            repeat = int(input('Do you want to repeat and change the thresholding level? 1 for yes, 0 for no'))
+            if repeat:
+                print('Current level is:',lvl)
+                print('\n')
+                lvl = input('Enter the new lvl (integer)')
             
     smallest_circle = [] #detects the inner circle with notch
     for i in range(len(contours)):
@@ -160,7 +166,7 @@ def inner_mask(data_path,slice_num,volume_num=0,lvl=0.004,rad1=7,rad2=50,step=1)
 # Finding the center of rotation
 # =================================================================================================
 
-def cen_rotation(data_path,slice_num,img_complete,cy_complete,cx_complete,radii_complete,canny_sgm=1):
+def cen_rotation(data_path,slice_num,img_complete,cy_complete,cx_complete,radii_complete,canny_sgm=1,img_path=None):
     
     temp_img= img_complete * (nib.load(data_path).get_data()[:,:,slice_num,0])
     
@@ -204,18 +210,28 @@ def cen_rotation(data_path,slice_num,img_complete,cy_complete,cx_complete,radii_
     vis_line[rr,cc]=1
     vis_line_rt = rt(vis_line, angle =angle_move,center=(np.array((col_cor,row_cor))), order=3, preserve_range=True)
 
+    fig = plt.figure()
+    ax = fig.add_subplot(2, 2, 1)
     plt.imshow(temp_img)
-    plt.title('Original Image')
-    plt.figure()
+    ax.set_title('Original Image')
+
+    ax = fig.add_subplot(2, 2, 2)
     plt.imshow(contrast_enh)
-    plt.title('Contrast Enhanced Image')
-    plt.figure()
+    ax.set_title('Contrast Enhanced Image')
+
+    ax = fig.add_subplot(2, 2, 3)
     plt.imshow(im)
-    plt.title('Sobel Image')
-    plt.figure()
-    plt.imshow(vis_line_rt )
-    plt.title('Estimated Center')
-    plt.show()
+    ax.set_title('Sobel Image')
+
+    ax = fig.add_subplot(2, 2, 4)
+    plt.imshow(vis_line_rt)
+    ax.set_title('Estimated Center')
+
+    if img_path is not None:
+        plt.savefig(img_path)
+        plt.close()
+    else:
+        plt.show()
 
     print('COR,COC',row_cor,col_cor)
         

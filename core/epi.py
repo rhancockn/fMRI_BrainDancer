@@ -22,8 +22,14 @@ from statsmodels.tsa.tsatools import detrend
 # =============================================================================
 # Converting encoder readings to degrees
 # =============================================================================
-def phantom_motion(log_path,first_motion_slice=200):
-    log = pd.read_csv(log_path)
+def phantom_motion(log_path,first_motion_slice=200, img_path=None):
+    with open(log_path, 'r') as fp:
+        line = fp.readline()
+        if line.startswith('Sequence'):
+            # skip lines
+            log = pd.read_csv(log_path, header=2)
+        else:
+            log = pd.read_csv(log_path)
     final_pos = log['EndPos'].values 
     positions = final_pos
     positions = positions.flatten() * 0.04392
@@ -36,6 +42,12 @@ def phantom_motion(log_path,first_motion_slice=200):
     plt.xlabel('TRs',fontsize=20)
     plt.ylabel('Phantom Motion in Degrees',fontsize=20)
     
+    if img_path is not None:
+        plt.savefig(img_path)
+        plt.close()
+    else:
+        plt.show()
+        
     return positions
 
 # %%
